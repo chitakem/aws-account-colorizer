@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Account Colorizer</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      color: #333;
+    }
+    
+    h2 {
+      margin-top: 0;
+      color: #232F3E;
+      border-bottom: 2px solid #FF9900;
+      padding-bottom: 8px;
+    }
+    
+    .account-entry {
+      display: flex;
+      margin-bottom: 12px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      background-color: #f9f9f9;
+      transition: background-color 0.2s;
+    }
+    
+    .account-entry:hover {
+      background-color: #f0f0f0;
+    }
+    
+    .account-id, .account-name {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .account-id:focus, .account-name:focus {
+      border-color: #FF9900;
+    }
+    
+    .account-color {
+      width: 45px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      margin: 0 8px;
+      cursor: pointer;
+    }
+    
+    .invalid-input {
+      border: 1px solid #d13212;
+      background-color: #fff0f0;
+    }
+    
+    button {
+      padding: 8px 12px;
+      background-color: #FF9900;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background-color: #FF8C00;
+    }
+    
+    .remove-account {
+      background-color: #d13212;
+      margin-left: 8px;
+      padding: 5px 8px;
+      font-size: 0.9em;
+    }
+    
+    .remove-account:hover {
+      background-color: #b92c11;
+    }
+    
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+    }
+    
+    #accounts-container {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding-right: 5px;
+    }
+    
+    #accounts-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #accounts-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    #accounts-container::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+    
+    #status-message {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+      display: none;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .success-message {
+      background-color: #dff0d8;
+      color: #3c763d;
+      border: 1px solid #d6e9c6;
+    }
+    
+    .error-message {
+      background-color: #f2dede;
+      color: #a94442;
+      border: 1px solid #ebccd1;
+    }
+    
+    .help-text {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h2>AWS Account Colorizer</h2>
+  
+  <p class="help-text">アカウントIDに応じてAWS Consoleのヘッダー色とタブタイトルをカスタマイズします。アカウントIDは12桁の数字です。</p>
+  
+  <div id="accounts-container"></div>
+  
+  <div class="actions">
+    <button id="add-account">アカウントを追加</button>
+    <button id="save">設定を保存</button>
+  </div>
+  
+  <div id="status-message" class="success-message" style="display: none;"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
