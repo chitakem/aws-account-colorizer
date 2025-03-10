@@ -79,6 +79,9 @@
     const validConfigs = [];
     let hasInvalidEntries = false;
     
+    // アカウントIDの重複をチェックするセット
+    const accountIdSet = new Set();
+    
     accountEntries.forEach(entry => {
       const accountIdEl = entry.querySelector('.account-id');
       const displayNameEl = entry.querySelector('.account-name');
@@ -92,8 +95,13 @@
       const displayName = displayNameEl.value.trim();
       const color = colorEl.value;
       
-      // Validate account ID format
-      if (accountId && !AWS_ACCOUNT_ID_PATTERN.test(accountId)) {
+      // 空のエントリーは無視
+      if (!accountId || !displayName) {
+        return;
+      }
+      
+      // アカウントIDのバリデーション
+      if (!AWS_ACCOUNT_ID_PATTERN.test(accountId)) {
         accountIdEl.classList.add('invalid-input');
         hasInvalidEntries = true;
         return;
@@ -101,22 +109,26 @@
         accountIdEl.classList.remove('invalid-input');
       }
       
-      // Skip empty entries
-      if (!accountId || !displayName) {
-        return;
-      }
-      
-      // Check for duplicate account IDs
-      if (validConfigs.some(config => config.accountId === accountId)) {
+      // アカウントIDの重複チェック
+      if (accountIdSet.has(accountId)) {
         accountIdEl.classList.add('invalid-input');
         hasInvalidEntries = true;
         return;
       }
       
+      // セットに追加
+      accountIdSet.add(accountId);
+      
+      // 色の検証
+      const validatedColor = validateColor(color);
+      
+      // XSS対策のためのディスプレイネームのサニタイズ
+      const sanitizedName = sanitizeInput(displayName);
+      
       validConfigs.push({
         accountId: accountId,
-        displayName: sanitizeInput(displayName),
-        color: validateColor(color)
+        displayName: sanitizedName,
+        color: validatedColor
       });
     });
     
@@ -231,13 +243,30 @@
     colorInput.className = 'account-color';
     colorInput.value = color;
     
+    // 色選択のプレビュー要素
+    const colorPreview = document.createElement('div');
+    colorPreview.className = 'color-preview';
+    colorPreview.style.backgroundColor = color;
+    colorPreview.title = '色のプレビュー';
+    
+    // 色が変更されたらプレビューも更新
+    colorInput.addEventListener('input', function() {
+      colorPreview.style.backgroundColor = this.value;
+    });
+    
     const removeButton = document.createElement('button');
     removeButton.className = 'remove-account';
     removeButton.textContent = '削除';
     
+    // 色入力とプレビューを含むコンテナ
+    const colorContainer = document.createElement('div');
+    colorContainer.className = 'color-container';
+    colorContainer.appendChild(colorInput);
+    colorContainer.appendChild(colorPreview);
+    
     accountEntryEl.appendChild(accountIdInput);
     accountEntryEl.appendChild(displayNameInput);
-    accountEntryEl.appendChild(colorInput);
+    accountEntryEl.appendChild(colorContainer);
     accountEntryEl.appendChild(removeButton);
     
     accountsContainerEl.appendChild(accountEntryEl);
@@ -272,6 +301,124 @@
         }
       });
     });
+    
+    // カラープレビューの更新処理
+    const colorInputs = document.querySelectorAll('.account-color');
+    colorInputs.forEach(input => {
+      const preview = input.parentElement.querySelector('.color-preview');
+      if (preview) {
+        input.addEventListener('input', function() {
+          preview.style.backgroundColor = this.value;
+        });
+      }
+    });
+  }
+  
+  /**
+   * Initialize the popup
+   */
+  function initializePopup() {
+    accountsContainerEl = document.getElementById('accounts-container');
+    addAccountButtonEl = document.getElementById('add-account');
+    saveButtonEl = document.getElementById('save');
+    
+    if (!accountsContainerEl || !addAccountButtonEl || !saveButtonEl) {
+      showStatusMessage('UI初期化エラー', true);
+      return;
+    }
+    
+    // Load existing configurations
+    loadAccountConfigurations();
+    
+    // Set up event handlers
+    addAccountButtonEl.addEventListener('click', handleAddAccount);
+    saveButtonEl.addEventListener('click', handleSaveConfigurations);
+    
+    // カラーサンプルの設定
+    setupColorSamples();
+  }
+  
+  /**
+   * カラーサンプルのクリックイベントを設定
+   */
+  function setupColorSamples() {
+    const colorSamples = document.querySelectorAll('.color-sample');
+    colorSamples.forEach(sample => {
+      sample.addEventListener('click', function() {
+        // 現在選択されているアカウントエントリを探す
+        const focusedEntry = document.activeElement.closest('.account-entry');
+        
+        // 色の取得
+        const color = window.getComputedStyle(this).backgroundColor;
+        const hexColor = rgbToHex(color);
+        
+        // フォーカスされているエントリがあれば、その色を変更
+        if (focusedEntry) {
+          const colorInput = focusedEntry.querySelector('.account-color');
+          const colorPreview = focusedEntry.querySelector('.color-preview');
+          
+          if (colorInput) {
+            colorInput.value = hexColor;
+            
+            if (colorPreview) {
+              colorPreview.style.backgroundColor = hexColor;
+            }
+          }
+        } else {
+          // フォーカスされたエントリがなければ、最後のエントリを対象にする
+          const entries = document.querySelectorAll('.account-entry');
+          if (entries.length > 0) {
+            const lastEntry = entries[entries.length - 1];
+            const colorInput = lastEntry.querySelector('.account-color');
+            const colorPreview = lastEntry.querySelector('.color-preview');
+            
+            if (colorInput) {
+              colorInput.value = hexColor;
+              
+              if (colorPreview) {
+                colorPreview.style.backgroundColor = hexColor;
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  /**
+   * RGB形式の色をHEX形式に変換
+   * @param {string} rgb - RGB形式の色 (例: "rgb(255, 0, 0)")
+   * @returns {string} HEX形式の色 (例: "#FF0000")
+   */
+  function rgbToHex(rgb) {
+    if (!rgb || typeof rgb !== 'string') {
+      return DEFAULT_COLOR;
+    }
+    
+    // rgb(r, g, b)の形式から数値を抽出
+    const rgbMatch = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (!rgbMatch) {
+      // マッチしない場合はデフォルト色を返す
+      console.warn(`Invalid RGB format: ${rgb}`);
+      return DEFAULT_COLOR;
+    }
+    
+    try {
+      // 値の検証（0-255の範囲内であること）
+      const r = Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10)));
+      const g = Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10)));
+      const b = Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)));
+      
+      // 10進数から16進数に変換し、2桁になるよう0埋め
+      const rHex = r.toString(16).padStart(2, '0');
+      const gHex = g.toString(16).padStart(2, '0');
+      const bHex = b.toString(16).padStart(2, '0');
+      
+      return `#${rHex}${gHex}${bHex}`.toUpperCase();
+    } catch (e) {
+      console.error('Error converting RGB to HEX:', e);
+      return DEFAULT_COLOR;
+    }
   }
   
   /**

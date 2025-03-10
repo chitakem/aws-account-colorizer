@@ -48,14 +48,33 @@
       border-color: #FF9900;
     }
     
+    .color-container {
+      display: flex;
+      align-items: center;
+      margin: 0 8px;
+    }
+    
     .account-color {
       width: 45px;
       height: 30px;
       padding: 0;
       border: 1px solid #ccc;
       border-radius: 3px;
-      margin: 0 8px;
       cursor: pointer;
+    }
+    
+    .color-preview {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-left: 5px;
+      border: 1px solid #ccc;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    
+    .color-preview:hover {
+      transform: scale(1.1);
     }
     
     .invalid-input {
@@ -145,6 +164,31 @@
       color: #666;
       margin-bottom: 12px;
     }
+    
+    /* 色のサンプル表示 */
+    .color-samples {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 10px 0;
+      padding: 5px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      background: #fcfcfc;
+    }
+    
+    .color-sample {
+      width: 20px;
+      height: 20px;
+      margin: 3px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      transition: transform 0.2s;
+    }
+    
+    .color-sample:hover {
+      transform: scale(1.2);
+    }
   </style>
 </head>
 <body>
@@ -153,6 +197,18 @@
   <p class="help-text">アカウントIDに応じてAWS Consoleのヘッダー色とタブタイトルをカスタマイズします。アカウントIDは12桁の数字です。</p>
   
   <div id="accounts-container"></div>
+  
+  <div class="color-samples">
+    <!-- 環境別のおすすめカラー -->
+    <div class="color-sample" style="background-color: #E73F3F;" title="本番環境向け (赤)"></div>
+    <div class="color-sample" style="background-color: #3FE762;" title="開発環境向け (緑)"></div>
+    <div class="color-sample" style="background-color: #3F7EE7;" title="ステージング環境向け (青)"></div>
+    <div class="color-sample" style="background-color: #9370DB;" title="テスト環境向け (紫)"></div>
+    <div class="color-sample" style="background-color: #FF9900;" title="AWSデフォルト (オレンジ)"></div>
+    <div class="color-sample" style="background-color: #FFCC00;" title="サンドボックス (黄)"></div>
+    <div class="color-sample" style="background-color: #00BFFF;" title="デモ環境 (水色)"></div>
+    <div class="color-sample" style="background-color: #8B4513;" title="その他環境 (茶)"></div>
+  </div>
   
   <div class="actions">
     <button id="add-account">アカウントを追加</button>
